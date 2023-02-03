@@ -65,6 +65,7 @@ describe("Vault.increaseLongPosition", function () {
     await daiPriceFeed.setLatestAnswer(toChainlinkPrice(1))
     await vault.setMaxGasPrice("20000000000") // 20 gwei
     await vault.setTokenConfig(...getDaiConfig(dai, daiPriceFeed))
+    await vault.connect(user1).increasePosition(user0.address, btc.address, btc.address, 0, true);
     await expect(vault.connect(user1).increasePosition(user0.address, btc.address, btc.address, 0, true))
       .to.be.revertedWith("Vault: invalid msg.sender")
     await expect(vault.connect(user1).increasePosition(user0.address, btc.address, btc.address, 0, true, { gasPrice: "21000000000" }))

@@ -291,13 +291,13 @@ contract PositionRouter is BasePositionManager, IPositionRouter {
     }
 
     function createIncreasePosition(
-        address[] memory _path,
-        address _indexToken,
-        uint256 _amountIn,
+        address[] memory _path, // 抵押币
+        address _indexToken, // 做多或做空目标币
+        uint256 _amountIn, // 抵押品的数量
         uint256 _minOut,
-        uint256 _sizeDelta,
+        uint256 _sizeDelta, // 开仓价：我们想要到达的仓位大小。GMX 规定的是直接 数额 乘以 10^30，遵守就好
         bool _isLong,
-        uint256 _acceptablePrice,
+        uint256 _acceptablePrice, // 开仓时接受的最大（多头）或最小（空头）指数价格的美元值，price decimals = 30
         uint256 _executionFee,
         bytes32 _referralCode,
         address _callbackTarget

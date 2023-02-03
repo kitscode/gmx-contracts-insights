@@ -94,8 +94,19 @@ contract Vault is ReentrancyGuard, IVault {
     mapping (address => uint256) public override tokenBalances;
 
     // tokenWeights allows customisation of index composition
-    mapping (address => uint256) public override tokenWeights;
-
+    mapping (address => uint256) public override tokenWeights; 
+    /* 各币种指数占比
+    WETH: 25% -- 28.65%
+    WBTC: 15% -- 14.26%
+    LINK: 5%  -- 2.49%
+    UNI:  1%  -- 0.81%
+    USDC: 30% -- 35.15% 
+    USDT: 9%  -- 6.06%
+    DAI:  12% -- 10.98%
+    MIM:  1%  -- 0%
+    FRAX: 2%  -- 1.58%
+    */
+    
     // usdgAmounts tracks the amount of USDG debt for each whitelisted token
     mapping (address => uint256) public override usdgAmounts;
 
@@ -356,6 +367,16 @@ contract Vault is ReentrancyGuard, IVault {
         fundingRateFactor = _fundingRateFactor;
         stableFundingRateFactor = _stableFundingRateFactor;
     }
+    
+    /*
+        dai.address, // _token
+        18, // _tokenDecimals
+        10000, // _tokenWeight
+        75, // _minProfitBps
+        0, // _maxUsdgAmount
+        true, // _isStable
+        false // _isShortable
+    */
 
     function setTokenConfig(
         address _token,
@@ -561,10 +582,10 @@ contract Vault is ReentrancyGuard, IVault {
     }
 
     function increasePosition(address _account, address _collateralToken, address _indexToken, uint256 _sizeDelta, bool _isLong) external override nonReentrant {
-        _validate(isLeverageEnabled, 28);
-        _validateGasPrice();
-        _validateRouter(_account);
-        _validateTokens(_collateralToken, _indexToken, _isLong);
+        _validate(isLeverageEnabled, 28); // 系统杠杆开关
+        _validateGasPrice(); // 交易最高gasPrice 
+        _validateRouter(_account); // 校验sender，必须是 account / Router / 批准过的 Router
+        _validateTokens(_collateralToken, _indexToken, _isLong); // 
         vaultUtils.validateIncreasePosition(_account, _collateralToken, _indexToken, _sizeDelta, _isLong);
 
         updateCumulativeFundingRate(_collateralToken, _indexToken);
@@ -1078,17 +1099,18 @@ contract Vault is ReentrancyGuard, IVault {
     }
 
     function _validateTokens(address _collateralToken, address _indexToken, bool _isLong) private view {
-        if (_isLong) {
-            _validate(_collateralToken == _indexToken, 42);
+        if (_isLong) { // 开多单
+            _validate(_collateralToken == _indexToken, 42); // 抵押品token必须和indexToken一样
             _validate(whitelistedTokens[_collateralToken], 43);
-            _validate(!stableTokens[_collateralToken], 44);
+            _validate(!stableTokens[_collateralToken], 44); // 且抵押品token不能为稳定币
             return;
         }
 
+        // 开空单
         _validate(whitelistedTokens[_collateralToken], 45);
-        _validate(stableTokens[_collateralToken], 46);
-        _validate(!stableTokens[_indexToken], 47);
-        _validate(shortableTokens[_indexToken], 48);
+        _validate(stableTokens[_collateralToken], 46); // 抵押品token必须为稳定币
+        _validate(!stableTokens[_indexToken], 47); // indexToken必须不能为稳定币
+        _validate(shortableTokens[_indexToken], 48); // 且indexToken必须是可被做空的token
     }
 
     function _collectSwapFees(address _token, uint256 _amount, uint256 _feeBasisPoints) private returns (uint256) {
