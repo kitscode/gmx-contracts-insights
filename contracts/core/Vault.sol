@@ -11,19 +11,20 @@ import "../tokens/interfaces/IUSDG.sol";
 import "./interfaces/IVault.sol";
 import "./interfaces/IVaultUtils.sol";
 import "./interfaces/IVaultPriceFeed.sol";
+import "hardhat/console.sol";
 
 contract Vault is ReentrancyGuard, IVault {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     struct Position {
-        uint256 size;
-        uint256 collateral;
-        uint256 averagePrice;
-        uint256 entryFundingRate;
-        uint256 reserveAmount;
+        uint256 size; // 仓位的头寸，以U计价
+        uint256 collateral; // 仓位的保证金，以U计价
+        uint256 averagePrice; // 仓位的保证金的平均价格
+        uint256 entryFundingRate; // 开仓时的 funding rate
+        uint256 reserveAmount; // 头寸币数量
         int256 realisedPnl;
-        uint256 lastIncreasedTime;
+        uint256 lastIncreasedTime; // 上次更新时间
     }
 
     uint256 public constant BASIS_POINTS_DIVISOR = 10000;
@@ -95,6 +96,17 @@ contract Vault is ReentrancyGuard, IVault {
 
     // tokenWeights allows customisation of index composition
     mapping (address => uint256) public override tokenWeights;
+    /* 各币种指数占比
+    WETH: 25% -- 28.65%
+    WBTC: 15% -- 14.26%
+    LINK: 5%  -- 2.49%
+    UNI:  1%  -- 0.81%
+    USDC: 30% -- 35.15% 
+    USDT: 9%  -- 6.06%
+    DAI:  12% -- 10.98%
+    MIM:  1%  -- 0%
+    FRAX: 2%  -- 1.58%
+    */
 
     // usdgAmounts tracks the amount of USDG debt for each whitelisted token
     mapping (address => uint256) public override usdgAmounts;
@@ -104,10 +116,10 @@ contract Vault is ReentrancyGuard, IVault {
 
     // poolAmounts tracks the number of received tokens that can be used for leverage
     // this is tracked separately from tokenBalances to exclude funds that are deposited as margin collateral
-    mapping (address => uint256) public override poolAmounts;
+    mapping (address => uint256) public override poolAmounts; // 池子总空闲资金 - 数量
 
     // reservedAmounts tracks the number of tokens reserved for open leverage positions
-    mapping (address => uint256) public override reservedAmounts;
+    mapping (address => uint256) public override reservedAmounts; // 池子当前总头寸 - 数量
 
     // bufferAmounts allows specification of an amount to exclude from swaps
     // this can be used to ensure a certain amount of liquidity is available for leverage positions
@@ -118,7 +130,7 @@ contract Vault is ReentrancyGuard, IVault {
     // this is an estimated amount, it is possible for the actual guaranteed value to be lower
     // in the case of sudden price decreases, the guaranteed value should be corrected
     // after liquidations are carried out
-    mapping (address => uint256) public override guaranteedUsd;
+    mapping (address => uint256) public override guaranteedUsd; // 池子当前提供的保证金总量 - 做多方向 - 美金
 
     // cumulativeFundingRates tracks the funding rates based on utilization
     mapping (address => uint256) public override cumulativeFundingRates;
@@ -131,7 +143,7 @@ contract Vault is ReentrancyGuard, IVault {
     // feeReserves tracks the amount of fees per token
     mapping (address => uint256) public override feeReserves;
 
-    mapping (address => uint256) public override globalShortSizes;
+    mapping (address => uint256) public override globalShortSizes; // 池子当前提供的保证金总量 - 做空方向 - 美金
     mapping (address => uint256) public override globalShortAveragePrices;
     mapping (address => uint256) public override maxGlobalShortSizes;
 
@@ -536,13 +548,19 @@ contract Vault is ReentrancyGuard, IVault {
 
         uint256 amountOut = amountIn.mul(priceIn).div(priceOut);
         amountOut = adjustForDecimals(amountOut, _tokenIn, _tokenOut);
+//        console.log("amountIn:", amountIn);
+        console.log("amountOut:", amountOut);
 
         // adjust usdgAmounts by the same usdgAmount as debt is shifted between the assets
         uint256 usdgAmount = amountIn.mul(priceIn).div(PRICE_PRECISION);
+//        console.log("usdgAmount:", usdgAmount);
         usdgAmount = adjustForDecimals(usdgAmount, _tokenIn, usdg);
+//        console.log("usdgAmount2:", usdgAmount);
 
         uint256 feeBasisPoints = vaultUtils.getSwapFeeBasisPoints(_tokenIn, _tokenOut, usdgAmount);
+//        console.log("feeBasisPoints:", feeBasisPoints);
         uint256 amountOutAfterFees = _collectSwapFees(_tokenOut, amountOut, feeBasisPoints);
+        console.log("amountOutAfterFees:", amountOutAfterFees);
 
         _increaseUsdgAmount(_tokenIn, usdgAmount);
         _decreaseUsdgAmount(_tokenOut, usdgAmount);
@@ -561,9 +579,9 @@ contract Vault is ReentrancyGuard, IVault {
     }
 
     function increasePosition(address _account, address _collateralToken, address _indexToken, uint256 _sizeDelta, bool _isLong) external override nonReentrant {
-        _validate(isLeverageEnabled, 28);
-        _validateGasPrice();
-        _validateRouter(_account);
+        _validate(isLeverageEnabled, 28); // 系统杠杆开关
+        _validateGasPrice(); // 交易最高gasPrice
+        _validateRouter(_account); // 校验sender，必须是 account / Router / 批准过的 Router
         _validateTokens(_collateralToken, _indexToken, _isLong);
         vaultUtils.validateIncreasePosition(_account, _collateralToken, _indexToken, _sizeDelta, _isLong);
 
@@ -574,17 +592,17 @@ contract Vault is ReentrancyGuard, IVault {
 
         uint256 price = _isLong ? getMaxPrice(_indexToken) : getMinPrice(_indexToken);
 
-        if (position.size == 0) {
+        if (position.size == 0) { // 开仓
             position.averagePrice = price;
         }
 
-        if (position.size > 0 && _sizeDelta > 0) {
+        if (position.size > 0 && _sizeDelta > 0) { // 加仓
             position.averagePrice = getNextAveragePrice(_indexToken, position.size, position.averagePrice, _isLong, price, _sizeDelta, position.lastIncreasedTime);
         }
 
         uint256 fee = _collectMarginFees(_account, _collateralToken, _indexToken, _isLong, _sizeDelta, position.size, position.entryFundingRate);
         uint256 collateralDelta = _transferIn(_collateralToken);
-        uint256 collateralDeltaUsd = tokenToUsdMin(_collateralToken, collateralDelta);
+        uint256 collateralDeltaUsd = tokenToUsdMin(_collateralToken, collateralDelta); // 抵押物价值，以低价计算
 
         position.collateral = position.collateral.add(collateralDeltaUsd);
         _validate(position.collateral >= fee, 29);
@@ -607,8 +625,8 @@ contract Vault is ReentrancyGuard, IVault {
             // guaranteedUsd stores the sum of (position.size - position.collateral) for all positions
             // if a fee is charged on the collateral then guaranteedUsd should be increased by that fee amount
             // since (position.size - position.collateral) would have increased by `fee`
-            _increaseGuaranteedUsd(_collateralToken, _sizeDelta.add(fee));
-            _decreaseGuaranteedUsd(_collateralToken, collateralDeltaUsd);
+            _increaseGuaranteedUsd(_collateralToken, _sizeDelta.add(fee)); // 目标头寸
+            _decreaseGuaranteedUsd(_collateralToken, collateralDeltaUsd); // 用户保证金
             // treat the deposited collateral as part of the pool
             _increasePoolAmount(_collateralToken, collateralDelta);
             // fees need to be deducted from the pool since fees are deducted from position.collateral
@@ -647,14 +665,18 @@ contract Vault is ReentrancyGuard, IVault {
         uint256 collateral = position.collateral;
         // scrop variables to avoid stack too deep errors
         {
-        uint256 reserveDelta = position.reserveAmount.mul(_sizeDelta).div(position.size);
+        console.log("Decrease # position.reserveAmount:", position.reserveAmount);
+        console.log("Decrease # _sizeDelta:", _sizeDelta);
+        console.log("Decrease # position.size:", position.size);
+        // 计算减仓头寸
+        uint256 reserveDelta = position.reserveAmount.mul(_sizeDelta).div(position.size); 
         position.reserveAmount = position.reserveAmount.sub(reserveDelta);
         _decreaseReservedAmount(_collateralToken, reserveDelta);
         }
 
         (uint256 usdOut, uint256 usdOutAfterFee) = _reduceCollateral(_account, _collateralToken, _indexToken, _collateralDelta, _sizeDelta, _isLong);
 
-        if (position.size != _sizeDelta) {
+        if (position.size != _sizeDelta) { // 减仓
             position.entryFundingRate = getEntryFundingRate(_collateralToken, _indexToken, _isLong);
             position.size = position.size.sub(_sizeDelta);
 
@@ -669,7 +691,7 @@ contract Vault is ReentrancyGuard, IVault {
             uint256 price = _isLong ? getMinPrice(_indexToken) : getMaxPrice(_indexToken);
             emit DecreasePosition(key, _account, _collateralToken, _indexToken, _collateralDelta, _sizeDelta, _isLong, price, usdOut.sub(usdOutAfterFee));
             emit UpdatePosition(key, position.size, position.collateral, position.averagePrice, position.entryFundingRate, position.reserveAmount, position.realisedPnl, price);
-        } else {
+        } else { // 平仓
             if (_isLong) {
                 _increaseGuaranteedUsd(_collateralToken, collateral);
                 _decreaseGuaranteedUsd(_collateralToken, _sizeDelta);
@@ -937,7 +959,7 @@ contract Vault is ReentrancyGuard, IVault {
         _validate(_averagePrice > 0, 38);
         uint256 price = _isLong ? getMinPrice(_indexToken) : getMaxPrice(_indexToken);
         uint256 priceDelta = _averagePrice > price ? _averagePrice.sub(price) : price.sub(_averagePrice);
-        uint256 delta = _size.mul(priceDelta).div(_averagePrice);
+        uint256 delta = _size.mul(priceDelta).div(_averagePrice); // 头寸(美金) * 价格区间差 / 当时价格
 
         bool hasProfit;
 
@@ -1002,7 +1024,9 @@ contract Vault is ReentrancyGuard, IVault {
         (bool _hasProfit, uint256 delta) = getDelta(_indexToken, position.size, position.averagePrice, _isLong, position.lastIncreasedTime);
         hasProfit = _hasProfit;
         // get the proportional change in pnl
-        adjustedDelta = _sizeDelta.mul(delta).div(position.size);
+        adjustedDelta = _sizeDelta.mul(delta).div(position.size); 
+            // delta: 当前整个仓位的盈亏，美金
+            // adjustedDelta: 当前减去的仓位部分的盈亏
         }
 
         uint256 usdOut;
@@ -1078,17 +1102,17 @@ contract Vault is ReentrancyGuard, IVault {
     }
 
     function _validateTokens(address _collateralToken, address _indexToken, bool _isLong) private view {
-        if (_isLong) {
-            _validate(_collateralToken == _indexToken, 42);
+        if (_isLong) { // 开多单
+            _validate(_collateralToken == _indexToken, 42); // 抵押品token必须和indexToken一样
             _validate(whitelistedTokens[_collateralToken], 43);
-            _validate(!stableTokens[_collateralToken], 44);
+            _validate(!stableTokens[_collateralToken], 44); // 且抵押品token不能为稳定币
             return;
         }
 
         _validate(whitelistedTokens[_collateralToken], 45);
-        _validate(stableTokens[_collateralToken], 46);
-        _validate(!stableTokens[_indexToken], 47);
-        _validate(shortableTokens[_indexToken], 48);
+        _validate(stableTokens[_collateralToken], 46); // 抵押品token必须为稳定币
+        _validate(!stableTokens[_indexToken], 47); // indexToken必须不能为稳定币
+        _validate(shortableTokens[_indexToken], 48); // 且indexToken必须是可被做空的token
     }
 
     function _collectSwapFees(address _token, uint256 _amount, uint256 _feeBasisPoints) private returns (uint256) {
@@ -1174,7 +1198,7 @@ contract Vault is ReentrancyGuard, IVault {
 
     function _increaseReservedAmount(address _token, uint256 _amount) private {
         reservedAmounts[_token] = reservedAmounts[_token].add(_amount);
-        _validate(reservedAmounts[_token] <= poolAmounts[_token], 52);
+        _validate(reservedAmounts[_token] <= poolAmounts[_token], 52); // 池子总头寸，不得超过池子所有的资金
         emit IncreaseReservedAmount(_token, _amount);
     }
 

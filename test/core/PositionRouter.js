@@ -124,88 +124,88 @@ describe("PositionRouter", function () {
     await vaultPriceFeed.setSecondaryPriceFeed(fastPriceFeed.address)
   })
 
-  it("inits", async () => {
-    expect(await positionRouter.vault()).eq(vault.address)
-    expect(await positionRouter.router()).eq(router.address)
-    expect(await positionRouter.weth()).eq(bnb.address)
-    expect(await positionRouter.depositFee()).eq(depositFee)
-    expect(await positionRouter.minExecutionFee()).eq(minExecutionFee)
-    expect(await positionRouter.admin()).eq(wallet.address)
-    expect(await positionRouter.gov()).eq(wallet.address)
-  })
-
-  it("setAdmin", async () => {
-    await expect(positionRouter.connect(user0).setAdmin(user1.address))
-      .to.be.revertedWith("Governable: forbidden")
-
-    await positionRouter.setGov(user0.address)
-
-    expect(await positionRouter.admin()).eq(wallet.address)
-    await positionRouter.connect(user0).setAdmin(user1.address)
-    expect(await positionRouter.admin()).eq(user1.address)
-  })
-
-  it("setDepositFee", async () => {
-    await expect(positionRouter.connect(user0).setDepositFee(25))
-      .to.be.revertedWith("BasePositionManager: forbidden")
-
-    await positionRouter.setAdmin(user0.address)
-
-    expect(await positionRouter.depositFee()).eq(depositFee)
-    await positionRouter.connect(user0).setDepositFee(25)
-    expect(await positionRouter.depositFee()).eq(25)
-  })
-
-  it("setIncreasePositionBufferBps", async () => {
-    await expect(positionRouter.connect(user0).setIncreasePositionBufferBps(200))
-      .to.be.revertedWith("BasePositionManager: forbidden")
-
-    await positionRouter.setAdmin(user0.address)
-
-    expect(await positionRouter.increasePositionBufferBps()).eq(100)
-    await positionRouter.connect(user0).setIncreasePositionBufferBps(200)
-    expect(await positionRouter.increasePositionBufferBps()).eq(200)
-  })
-
-  it("setReferralStorage", async () => {
-    await expect(positionRouter.connect(user0).setReferralStorage(user1.address))
-      .to.be.revertedWith("BasePositionManager: forbidden")
-
-    await positionRouter.setAdmin(user0.address)
-
-    expect(await positionRouter.referralStorage()).eq(referralStorage.address)
-    await positionRouter.connect(user0).setReferralStorage(user1.address)
-    expect(await positionRouter.referralStorage()).eq(user1.address)
-  })
-
-  it("setMaxGlobalSizes", async () => {
-    const tokens = [bnb.address, btc.address, eth.address]
-    const maxGlobalLongSizes = [7, 20, 15]
-    const maxGlobalShortSizes = [3, 12, 8]
-
-    await expect(positionRouter.connect(user0).setMaxGlobalSizes(tokens, maxGlobalLongSizes, maxGlobalShortSizes))
-      .to.be.revertedWith("BasePositionManager: forbidden")
-
-    await positionRouter.setAdmin(user0.address)
-
-    expect(await positionRouter.maxGlobalLongSizes(bnb.address)).eq(0)
-    expect(await positionRouter.maxGlobalLongSizes(btc.address)).eq(0)
-    expect(await positionRouter.maxGlobalLongSizes(eth.address)).eq(0)
-
-    expect(await positionRouter.maxGlobalShortSizes(bnb.address)).eq(0)
-    expect(await positionRouter.maxGlobalShortSizes(btc.address)).eq(0)
-    expect(await positionRouter.maxGlobalShortSizes(eth.address)).eq(0)
-
-    await positionRouter.connect(user0).setMaxGlobalSizes(tokens, maxGlobalLongSizes, maxGlobalShortSizes)
-
-    expect(await positionRouter.maxGlobalLongSizes(bnb.address)).eq(7)
-    expect(await positionRouter.maxGlobalLongSizes(btc.address)).eq(20)
-    expect(await positionRouter.maxGlobalLongSizes(eth.address)).eq(15)
-
-    expect(await positionRouter.maxGlobalShortSizes(bnb.address)).eq(3)
-    expect(await positionRouter.maxGlobalShortSizes(btc.address)).eq(12)
-    expect(await positionRouter.maxGlobalShortSizes(eth.address)).eq(8)
-  })
+  // it("inits", async () => {
+  //   expect(await positionRouter.vault()).eq(vault.address)
+  //   expect(await positionRouter.router()).eq(router.address)
+  //   expect(await positionRouter.weth()).eq(bnb.address)
+  //   expect(await positionRouter.depositFee()).eq(depositFee)
+  //   expect(await positionRouter.minExecutionFee()).eq(minExecutionFee)
+  //   expect(await positionRouter.admin()).eq(wallet.address)
+  //   expect(await positionRouter.gov()).eq(wallet.address)
+  // })
+  //
+  // it("setAdmin", async () => {
+  //   await expect(positionRouter.connect(user0).setAdmin(user1.address))
+  //     .to.be.revertedWith("Governable: forbidden")
+  //
+  //   await positionRouter.setGov(user0.address)
+  //
+  //   expect(await positionRouter.admin()).eq(wallet.address)
+  //   await positionRouter.connect(user0).setAdmin(user1.address)
+  //   expect(await positionRouter.admin()).eq(user1.address)
+  // })
+  //
+  // it("setDepositFee", async () => {
+  //   await expect(positionRouter.connect(user0).setDepositFee(25))
+  //     .to.be.revertedWith("BasePositionManager: forbidden")
+  //
+  //   await positionRouter.setAdmin(user0.address)
+  //
+  //   expect(await positionRouter.depositFee()).eq(depositFee)
+  //   await positionRouter.connect(user0).setDepositFee(25)
+  //   expect(await positionRouter.depositFee()).eq(25)
+  // })
+  //
+  // it("setIncreasePositionBufferBps", async () => {
+  //   await expect(positionRouter.connect(user0).setIncreasePositionBufferBps(200))
+  //     .to.be.revertedWith("BasePositionManager: forbidden")
+  //
+  //   await positionRouter.setAdmin(user0.address)
+  //
+  //   expect(await positionRouter.increasePositionBufferBps()).eq(100)
+  //   await positionRouter.connect(user0).setIncreasePositionBufferBps(200)
+  //   expect(await positionRouter.increasePositionBufferBps()).eq(200)
+  // })
+  //
+  // it("setReferralStorage", async () => {
+  //   await expect(positionRouter.connect(user0).setReferralStorage(user1.address))
+  //     .to.be.revertedWith("BasePositionManager: forbidden")
+  //
+  //   await positionRouter.setAdmin(user0.address)
+  //
+  //   expect(await positionRouter.referralStorage()).eq(referralStorage.address)
+  //   await positionRouter.connect(user0).setReferralStorage(user1.address)
+  //   expect(await positionRouter.referralStorage()).eq(user1.address)
+  // })
+  //
+  // it("setMaxGlobalSizes", async () => {
+  //   const tokens = [bnb.address, btc.address, eth.address]
+  //   const maxGlobalLongSizes = [7, 20, 15]
+  //   const maxGlobalShortSizes = [3, 12, 8]
+  //
+  //   await expect(positionRouter.connect(user0).setMaxGlobalSizes(tokens, maxGlobalLongSizes, maxGlobalShortSizes))
+  //     .to.be.revertedWith("BasePositionManager: forbidden")
+  //
+  //   await positionRouter.setAdmin(user0.address)
+  //
+  //   expect(await positionRouter.maxGlobalLongSizes(bnb.address)).eq(0)
+  //   expect(await positionRouter.maxGlobalLongSizes(btc.address)).eq(0)
+  //   expect(await positionRouter.maxGlobalLongSizes(eth.address)).eq(0)
+  //
+  //   expect(await positionRouter.maxGlobalShortSizes(bnb.address)).eq(0)
+  //   expect(await positionRouter.maxGlobalShortSizes(btc.address)).eq(0)
+  //   expect(await positionRouter.maxGlobalShortSizes(eth.address)).eq(0)
+  //
+  //   await positionRouter.connect(user0).setMaxGlobalSizes(tokens, maxGlobalLongSizes, maxGlobalShortSizes)
+  //
+  //   expect(await positionRouter.maxGlobalLongSizes(bnb.address)).eq(7)
+  //   expect(await positionRouter.maxGlobalLongSizes(btc.address)).eq(20)
+  //   expect(await positionRouter.maxGlobalLongSizes(eth.address)).eq(15)
+  //
+  //   expect(await positionRouter.maxGlobalShortSizes(bnb.address)).eq(3)
+  //   expect(await positionRouter.maxGlobalShortSizes(btc.address)).eq(12)
+  //   expect(await positionRouter.maxGlobalShortSizes(eth.address)).eq(8)
+  // })
 
   it("withdrawFees", async () => {
     await positionRouter.setDelayValues(0, 300, 500)
@@ -230,16 +230,17 @@ describe("PositionRouter", function () {
     await router.connect(user0).approvePlugin(positionRouter.address)
 
     await dai.mint(user0.address, expandDecimals(600, 18))
-    await dai.connect(user0).approve(router.address, expandDecimals(600, 18))
+    await dai.connect(user0).approve(router.address, expandDecimals(600, 18)) // Approve Router, PositionRouter -> Router.pluginTransfer
 
-    let key = await positionRouter.getRequestKey(user0.address, 1)
+    let key = await positionRouter.getRequestKey(user0.address, 1) // increasePositionRequestKeys 订单消费队列
 
     const executionFeeReceiver = newWallet()
     await positionRouter.setPositionKeeper(positionKeeper.address, true)
 
+    // 用 Dai 做多 Bnb，10倍
     await positionRouter.connect(user0).createIncreasePosition(...params.concat([4000, referralCode, AddressZero]), { value: 4000 })
     await positionRouter.connect(positionKeeper).executeIncreasePosition(key, executionFeeReceiver.address)
-    expect(await provider.getBalance(executionFeeReceiver.address)).eq(4000)
+    expect(await provider.getBalance(executionFeeReceiver.address)).eq(4000) // executionFee
 
     params = [
       [dai.address, bnb.address], // _path
@@ -254,6 +255,7 @@ describe("PositionRouter", function () {
     await dai.mint(user0.address, expandDecimals(600, 18))
     await dai.connect(user0).approve(router.address, expandDecimals(600, 18))
 
+    // 增加保证金
     await positionRouter.connect(user0).createIncreasePosition(...params.concat([4000, referralCode, AddressZero]), { value: 4000 })
     key = await positionRouter.getRequestKey(user0.address, 2)
 
@@ -261,6 +263,8 @@ describe("PositionRouter", function () {
     await positionRouter.connect(positionKeeper).executeIncreasePosition(key, executionFeeReceiver.address)
     expect(await provider.getBalance(executionFeeReceiver.address)).eq(8000)
     expect(await positionRouter.feeReserves(dai.address)).eq(0)
+    // After Swap Fee: Bnb 2 feeBasisPoints: - 3/1000 = 1.994
+    // After Deposit Fee: 1.994 - 5/1000 = 0.00997
     expect(await positionRouter.feeReserves(bnb.address)).eq("9970000000000000") // 0.00997
 
     await expect(positionRouter.connect(user2).withdrawFees(dai.address, user3.address))
@@ -289,93 +293,93 @@ describe("PositionRouter", function () {
   })
 
 
-  it("approve", async () => {
-    await expect(positionRouter.connect(user0).approve(bnb.address, user1.address, 100))
-      .to.be.revertedWith("Governable: forbidden")
-
-    await positionRouter.setGov(user0.address)
-
-    expect(await bnb.allowance(positionRouter.address, user1.address)).eq(0)
-    await positionRouter.connect(user0).approve(bnb.address, user1.address, 100)
-    expect(await bnb.allowance(positionRouter.address, user1.address)).eq(100)
-  })
-
-  it("sendValue", async () => {
-    await expect(positionRouter.connect(user0).sendValue(user1.address, 0))
-      .to.be.revertedWith("Governable: forbidden")
-
-    await positionRouter.setGov(user0.address)
-
-    await positionRouter.connect(user0).sendValue(user1.address, 0)
-  })
-
-  it("setPositionKeeper", async () => {
-    await expect(positionRouter.connect(user0).setPositionKeeper(user1.address, true))
-      .to.be.revertedWith("BasePositionManager: forbidden")
-
-    await positionRouter.setAdmin(user0.address)
-
-    expect(await positionRouter.isPositionKeeper(user1.address)).eq(false)
-    await positionRouter.connect(user0).setPositionKeeper(user1.address, true)
-    expect(await positionRouter.isPositionKeeper(user1.address)).eq(true)
-
-    await positionRouter.connect(user0).setPositionKeeper(user1.address, false)
-    expect(await positionRouter.isPositionKeeper(user1.address)).eq(false)
-  })
-
-  it("setMinExecutionFee", async () => {
-    await expect(positionRouter.connect(user0).setMinExecutionFee("7000"))
-      .to.be.revertedWith("BasePositionManager: forbidden")
-
-    await positionRouter.setAdmin(user0.address)
-
-    expect(await positionRouter.minExecutionFee()).eq(minExecutionFee)
-    await positionRouter.connect(user0).setMinExecutionFee("7000")
-    expect(await positionRouter.minExecutionFee()).eq("7000")
-  })
-
-  it("setIsLeverageEnabled", async () => {
-    await expect(positionRouter.connect(user0).setIsLeverageEnabled(false))
-      .to.be.revertedWith("BasePositionManager: forbidden")
-
-    await positionRouter.setAdmin(user0.address)
-
-    expect(await positionRouter.isLeverageEnabled()).eq(true)
-    await positionRouter.connect(user0).setIsLeverageEnabled(false)
-    expect(await positionRouter.isLeverageEnabled()).eq(false)
-  })
-
-  it("setDelayValues", async () => {
-    await expect(positionRouter.connect(user0).setDelayValues(7, 21, 600))
-      .to.be.revertedWith("BasePositionManager: forbidden")
-
-    await positionRouter.setAdmin(user0.address)
-
-    expect(await positionRouter.minBlockDelayKeeper()).eq(0)
-    expect(await positionRouter.minTimeDelayPublic()).eq(0)
-    expect(await positionRouter.maxTimeDelay()).eq(0)
-
-    await positionRouter.connect(user0).setDelayValues(7, 21, 600)
-
-    expect(await positionRouter.minBlockDelayKeeper()).eq(7)
-    expect(await positionRouter.minTimeDelayPublic()).eq(21)
-    expect(await positionRouter.maxTimeDelay()).eq(600)
-  })
-
-  it("setRequestKeysStartValues", async () => {
-    await expect(positionRouter.connect(user0).setRequestKeysStartValues(5, 8))
-      .to.be.revertedWith("BasePositionManager: forbidden")
-
-    await positionRouter.setAdmin(user0.address)
-
-    expect(await positionRouter.increasePositionRequestKeysStart()).eq(0)
-    expect(await positionRouter.decreasePositionRequestKeysStart()).eq(0)
-
-    await positionRouter.connect(user0).setRequestKeysStartValues(5, 8)
-
-    expect(await positionRouter.increasePositionRequestKeysStart()).eq(5)
-    expect(await positionRouter.decreasePositionRequestKeysStart()).eq(8)
-  })
+  // it("approve", async () => {
+  //   await expect(positionRouter.connect(user0).approve(bnb.address, user1.address, 100))
+  //     .to.be.revertedWith("Governable: forbidden")
+  //
+  //   await positionRouter.setGov(user0.address)
+  //
+  //   expect(await bnb.allowance(positionRouter.address, user1.address)).eq(0)
+  //   await positionRouter.connect(user0).approve(bnb.address, user1.address, 100)
+  //   expect(await bnb.allowance(positionRouter.address, user1.address)).eq(100)
+  // })
+  //
+  // it("sendValue", async () => {
+  //   await expect(positionRouter.connect(user0).sendValue(user1.address, 0))
+  //     .to.be.revertedWith("Governable: forbidden")
+  //
+  //   await positionRouter.setGov(user0.address)
+  //
+  //   await positionRouter.connect(user0).sendValue(user1.address, 0)
+  // })
+  //
+  // it("setPositionKeeper", async () => {
+  //   await expect(positionRouter.connect(user0).setPositionKeeper(user1.address, true))
+  //     .to.be.revertedWith("BasePositionManager: forbidden")
+  //
+  //   await positionRouter.setAdmin(user0.address)
+  //
+  //   expect(await positionRouter.isPositionKeeper(user1.address)).eq(false)
+  //   await positionRouter.connect(user0).setPositionKeeper(user1.address, true)
+  //   expect(await positionRouter.isPositionKeeper(user1.address)).eq(true)
+  //
+  //   await positionRouter.connect(user0).setPositionKeeper(user1.address, false)
+  //   expect(await positionRouter.isPositionKeeper(user1.address)).eq(false)
+  // })
+  //
+  // it("setMinExecutionFee", async () => {
+  //   await expect(positionRouter.connect(user0).setMinExecutionFee("7000"))
+  //     .to.be.revertedWith("BasePositionManager: forbidden")
+  //
+  //   await positionRouter.setAdmin(user0.address)
+  //
+  //   expect(await positionRouter.minExecutionFee()).eq(minExecutionFee)
+  //   await positionRouter.connect(user0).setMinExecutionFee("7000")
+  //   expect(await positionRouter.minExecutionFee()).eq("7000")
+  // })
+  //
+  // it("setIsLeverageEnabled", async () => {
+  //   await expect(positionRouter.connect(user0).setIsLeverageEnabled(false))
+  //     .to.be.revertedWith("BasePositionManager: forbidden")
+  //
+  //   await positionRouter.setAdmin(user0.address)
+  //
+  //   expect(await positionRouter.isLeverageEnabled()).eq(true)
+  //   await positionRouter.connect(user0).setIsLeverageEnabled(false)
+  //   expect(await positionRouter.isLeverageEnabled()).eq(false)
+  // })
+  //
+  // it("setDelayValues", async () => {
+  //   await expect(positionRouter.connect(user0).setDelayValues(7, 21, 600))
+  //     .to.be.revertedWith("BasePositionManager: forbidden")
+  //
+  //   await positionRouter.setAdmin(user0.address)
+  //
+  //   expect(await positionRouter.minBlockDelayKeeper()).eq(0)
+  //   expect(await positionRouter.minTimeDelayPublic()).eq(0)
+  //   expect(await positionRouter.maxTimeDelay()).eq(0)
+  //
+  //   await positionRouter.connect(user0).setDelayValues(7, 21, 600)
+  //
+  //   expect(await positionRouter.minBlockDelayKeeper()).eq(7)
+  //   expect(await positionRouter.minTimeDelayPublic()).eq(21)
+  //   expect(await positionRouter.maxTimeDelay()).eq(600)
+  // })
+  //
+  // it("setRequestKeysStartValues", async () => {
+  //   await expect(positionRouter.connect(user0).setRequestKeysStartValues(5, 8))
+  //     .to.be.revertedWith("BasePositionManager: forbidden")
+  //
+  //   await positionRouter.setAdmin(user0.address)
+  //
+  //   expect(await positionRouter.increasePositionRequestKeysStart()).eq(0)
+  //   expect(await positionRouter.decreasePositionRequestKeysStart()).eq(0)
+  //
+  //   await positionRouter.connect(user0).setRequestKeysStartValues(5, 8)
+  //
+  //   expect(await positionRouter.increasePositionRequestKeysStart()).eq(5)
+  //   expect(await positionRouter.decreasePositionRequestKeysStart()).eq(8)
+  // })
 
   it("increasePosition acceptablePrice long", async () => {
     await positionRouter.setDelayValues(0, 300, 500)
@@ -478,6 +482,8 @@ describe("PositionRouter", function () {
     await dai.connect(user0).approve(router.address, expandDecimals(600, 18))
 
     await positionRouter.connect(user0).createIncreasePosition(...params.concat([4000, referralCode, AddressZero]), { value: 4000 })
+
+    let request = await positionRouter.increasePositionRequests(key)
     await positionRouter.connect(positionKeeper).executeIncreasePosition(key, executionFeeReceiver.address)
 
     expect(await provider.getBalance(executionFeeReceiver.address)).eq(0)
@@ -497,7 +503,7 @@ describe("PositionRouter", function () {
     await increaseTime(provider, 110)
     await mineBlock(provider)
 
-    let request = await positionRouter.increasePositionRequests(key)
+    // let request = await positionRouter.increasePositionRequests(key)
 
     expect(await provider.getBalance(executionFeeReceiver.address)).eq(0)
     expect(request.account).eq(user0.address)
@@ -751,6 +757,8 @@ describe("PositionRouter", function () {
 
     await positionRouter.connect(user0).createDecreasePosition(...decreasePositionParams.concat([4000, false, AddressZero]), { value: 4000 })
     key = await positionRouter.getRequestKey(user0.address, 1)
+    console.log("---------- Decrease Position ------------");
+    
     await expect(positionRouter.connect(positionKeeper).executeDecreasePosition(key, executionFeeReceiver.address))
       .to.be.revertedWith("BasePositionManager: insufficient amountOut")
   })

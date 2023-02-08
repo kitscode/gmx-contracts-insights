@@ -49,9 +49,9 @@ contract PositionRouter is BasePositionManager, IPositionRouter {
 
     uint256 public minExecutionFee;
 
-    uint256 public minBlockDelayKeeper;
-    uint256 public minTimeDelayPublic;
-    uint256 public maxTimeDelay;
+    uint256 public minBlockDelayKeeper; // keeper 执行订单最小延迟区块数
+    uint256 public minTimeDelayPublic; // 用户自己执行最小延迟时间
+    uint256 public maxTimeDelay; // keeper 执行订单最长延迟时间
 
     bool public isLeverageEnabled = true;
 
@@ -291,13 +291,13 @@ contract PositionRouter is BasePositionManager, IPositionRouter {
     }
 
     function createIncreasePosition(
-        address[] memory _path,
-        address _indexToken,
-        uint256 _amountIn,
+        address[] memory _path, // 抵押币
+        address _indexToken, // 做多或做空目标币
+        uint256 _amountIn, // 抵押品量 - 数量
         uint256 _minOut,
-        uint256 _sizeDelta,
+        uint256 _sizeDelta, // 增加头寸量 - 美金
         bool _isLong,
-        uint256 _acceptablePrice,
+        uint256 _acceptablePrice, // 开仓时接受的最大（多头）或最小（空头）指数价格的美元值
         uint256 _executionFee,
         bytes32 _referralCode,
         address _callbackTarget

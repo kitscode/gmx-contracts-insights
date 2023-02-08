@@ -19,6 +19,7 @@ import "../access/Governable.sol";
 import "../peripherals/interfaces/ITimelock.sol";
 
 import "../referrals/interfaces/IReferralStorage.sol";
+import "hardhat/console.sol";
 
 contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governable {
 
@@ -46,7 +47,7 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
 
     mapping (address => uint256) public feeReserves;
 
-    mapping (address => uint256) public override maxGlobalLongSizes;
+    mapping (address => uint256) public override maxGlobalLongSizes; // 池子总借出金额
     mapping (address => uint256) public override maxGlobalShortSizes;
 
     event SetDepositFee(uint256 depositFee);
@@ -186,6 +187,7 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
 
         address timelock = IVault(_vault).gov();
 
+        // 做多时，此处 _collateralToken = _indexToken
         // should be called strictly before position is updated in Vault
         IShortsTracker(shortsTracker).updateGlobalShortData(_account, _collateralToken, _indexToken, _isLong, _sizeDelta, markPrice, true);
 
@@ -266,6 +268,7 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
 
     function _vaultSwap(address _tokenIn, address _tokenOut, uint256 _minOut, address _receiver) internal returns (uint256) {
         uint256 amountOut = IVault(vault).swap(_tokenIn, _tokenOut, _receiver);
+        console.log("Swap # amountOut:", amountOut);
         require(amountOut >= _minOut, "BasePositionManager: insufficient amountOut");
         return amountOut;
     }
@@ -305,6 +308,9 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
         if (shouldDeductFee) {
             uint256 afterFeeAmount = _amountIn.mul(BASIS_POINTS_DIVISOR.sub(depositFee)).div(BASIS_POINTS_DIVISOR);
             uint256 feeAmount = _amountIn.sub(afterFeeAmount);
+            console.log("amountIn:", _amountIn);
+            console.log("depositFee:", depositFee);
+            console.log("feeAmount:", feeAmount);
             address feeToken = _path[_path.length - 1];
             feeReserves[feeToken] = feeReserves[feeToken].add(feeAmount);
             return afterFeeAmount;
