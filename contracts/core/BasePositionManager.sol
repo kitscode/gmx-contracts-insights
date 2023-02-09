@@ -270,7 +270,7 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
 
     function _vaultSwap(address _tokenIn, address _tokenOut, uint256 _minOut, address _receiver) internal returns (uint256) {
         uint256 amountOut = IVault(vault).swap(_tokenIn, _tokenOut, _receiver);
-        console.log("Swap # amountOut:", amountOut);
+//        console.log("Swap # amountOut:", amountOut);
         require(amountOut >= _minOut, "BasePositionManager: insufficient amountOut");
         return amountOut;
     }
@@ -310,9 +310,9 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
         if (shouldDeductFee) {
             uint256 afterFeeAmount = _amountIn.mul(BASIS_POINTS_DIVISOR.sub(depositFee)).div(BASIS_POINTS_DIVISOR);
             uint256 feeAmount = _amountIn.sub(afterFeeAmount);
-            console.log("amountIn:", _amountIn);
-            console.log("depositFee:", depositFee);
-            console.log("feeAmount:", feeAmount);
+//            console.log("amountIn:", _amountIn);
+//            console.log("depositFee:", depositFee);
+//            console.log("feeAmount:", feeAmount);
             address feeToken = _path[_path.length - 1];
             feeReserves[feeToken] = feeReserves[feeToken].add(feeAmount);
             return afterFeeAmount;

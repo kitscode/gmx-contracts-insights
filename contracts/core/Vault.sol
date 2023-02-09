@@ -549,7 +549,7 @@ contract Vault is ReentrancyGuard, IVault {
         uint256 amountOut = amountIn.mul(priceIn).div(priceOut);
         amountOut = adjustForDecimals(amountOut, _tokenIn, _tokenOut);
 //        console.log("amountIn:", amountIn);
-        console.log("amountOut:", amountOut);
+//        console.log("amountOut:", amountOut);
 
         // adjust usdgAmounts by the same usdgAmount as debt is shifted between the assets
         uint256 usdgAmount = amountIn.mul(priceIn).div(PRICE_PRECISION);
@@ -560,7 +560,7 @@ contract Vault is ReentrancyGuard, IVault {
         uint256 feeBasisPoints = vaultUtils.getSwapFeeBasisPoints(_tokenIn, _tokenOut, usdgAmount);
 //        console.log("feeBasisPoints:", feeBasisPoints);
         uint256 amountOutAfterFees = _collectSwapFees(_tokenOut, amountOut, feeBasisPoints);
-        console.log("amountOutAfterFees:", amountOutAfterFees);
+//        console.log("amountOutAfterFees:", amountOutAfterFees);
 
         _increaseUsdgAmount(_tokenIn, usdgAmount);
         _decreaseUsdgAmount(_tokenOut, usdgAmount);
@@ -665,9 +665,9 @@ contract Vault is ReentrancyGuard, IVault {
         uint256 collateral = position.collateral;
         // scrop variables to avoid stack too deep errors
         {
-        console.log("Decrease # position.reserveAmount:", position.reserveAmount);
-        console.log("Decrease # _sizeDelta:", _sizeDelta);
-        console.log("Decrease # position.size:", position.size);
+//        console.log("Decrease # position.reserveAmount:", position.reserveAmount);
+//        console.log("Decrease # _sizeDelta:", _sizeDelta);
+//        console.log("Decrease # position.size:", position.size);
         // 计算减仓头寸
         uint256 reserveDelta = position.reserveAmount.mul(_sizeDelta).div(position.size); 
         position.reserveAmount = position.reserveAmount.sub(reserveDelta);
