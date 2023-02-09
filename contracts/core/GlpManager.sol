@@ -163,8 +163,10 @@ contract GlpManager is ReentrancyGuard, Governable, IGlpManager {
                     }
                 }
 
+                // + 固定币种，当前在用保证金（美金）
                 aum = aum.add(_vault.guaranteedUsd(token));
 
+                // + 固定币种，空闲资金量（美金）
                 uint256 reservedAmount = _vault.reservedAmounts(token);
                 aum = aum.add(poolAmount.sub(reservedAmount).mul(price).div(10 ** decimals));
             }
@@ -213,6 +215,7 @@ contract GlpManager is ReentrancyGuard, Governable, IGlpManager {
         uint256 usdgAmount = vault.buyUSDG(_token, address(this));
         require(usdgAmount >= _minUsdg, "GlpManager: insufficient USDG output");
 
+        // 初始 $1，后期 GLP 单价 = 池子估算资金量 / totalSupply
         uint256 mintAmount = aumInUsdg == 0 ? usdgAmount : usdgAmount.mul(glpSupply).div(aumInUsdg);
         require(mintAmount >= _minGlp, "GlpManager: insufficient GLP output");
 

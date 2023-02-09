@@ -65,6 +65,7 @@ contract PositionRouter is BasePositionManager, IPositionRouter {
 
     mapping (address => bool) public isPositionKeeper;
 
+    // account => 操作数
     mapping (address => uint256) public increasePositionsIndex;
     mapping (bytes32 => IncreasePositionRequest) public increasePositionRequests;
 

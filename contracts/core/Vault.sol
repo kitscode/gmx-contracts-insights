@@ -23,7 +23,7 @@ contract Vault is ReentrancyGuard, IVault {
         uint256 averagePrice; // 仓位的保证金的平均价格
         uint256 entryFundingRate; // 开仓时的 funding rate
         uint256 reserveAmount; // 头寸币数量
-        int256 realisedPnl;
+        int256 realisedPnl; // 已释放盈亏
         uint256 lastIncreasedTime; // 上次更新时间
     }
 
@@ -116,10 +116,10 @@ contract Vault is ReentrancyGuard, IVault {
 
     // poolAmounts tracks the number of received tokens that can be used for leverage
     // this is tracked separately from tokenBalances to exclude funds that are deposited as margin collateral
-    mapping (address => uint256) public override poolAmounts; // 池子总空闲资金 - 数量
+    mapping (address => uint256) public override poolAmounts; // 固定币种的总资金（去除手续费） - 数量
 
     // reservedAmounts tracks the number of tokens reserved for open leverage positions
-    mapping (address => uint256) public override reservedAmounts; // 池子当前总头寸 - 数量
+    mapping (address => uint256) public override reservedAmounts; // 固定币种当前总头寸 - 数量
 
     // bufferAmounts allows specification of an amount to exclude from swaps
     // this can be used to ensure a certain amount of liquidity is available for leverage positions
@@ -582,7 +582,7 @@ contract Vault is ReentrancyGuard, IVault {
         _validate(isLeverageEnabled, 28); // 系统杠杆开关
         _validateGasPrice(); // 交易最高gasPrice
         _validateRouter(_account); // 校验sender，必须是 account / Router / 批准过的 Router
-        _validateTokens(_collateralToken, _indexToken, _isLong);
+        _validateTokens(_collateralToken, _indexToken, _isLong); // 币种检查
         vaultUtils.validateIncreasePosition(_account, _collateralToken, _indexToken, _sizeDelta, _isLong);
 
         updateCumulativeFundingRate(_collateralToken, _indexToken);
@@ -621,7 +621,7 @@ contract Vault is ReentrancyGuard, IVault {
         position.reserveAmount = position.reserveAmount.add(reserveDelta);
         _increaseReservedAmount(_collateralToken, reserveDelta);
 
-        if (_isLong) {
+        if (_isLong) { // 做多
             // guaranteedUsd stores the sum of (position.size - position.collateral) for all positions
             // if a fee is charged on the collateral then guaranteedUsd should be increased by that fee amount
             // since (position.size - position.collateral) would have increased by `fee`
@@ -632,7 +632,7 @@ contract Vault is ReentrancyGuard, IVault {
             // fees need to be deducted from the pool since fees are deducted from position.collateral
             // and collateral is treated as part of the pool
             _decreasePoolAmount(_collateralToken, usdToTokenMin(_collateralToken, fee));
-        } else {
+        } else { // 做空
             if (globalShortSizes[_indexToken] == 0) {
                 globalShortAveragePrices[_indexToken] = price;
             } else {

@@ -210,7 +210,7 @@ describe("PositionRouter", function () {
   it("withdrawFees", async () => {
     await positionRouter.setDelayValues(0, 300, 500)
     await bnb.mint(vault.address, expandDecimals(30, 18))
-    await vault.buyUSDG(bnb.address, user1.address)
+    // await vault.buyUSDG(bnb.address, user1.address)
     await timelock.setContractHandler(positionRouter.address, true)
     await timelock.setShouldToggleIsLeverageEnabled(true)
 
