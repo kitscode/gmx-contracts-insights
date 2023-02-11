@@ -193,7 +193,7 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
         // should be called strictly before position is updated in Vault
         IShortsTracker(shortsTracker).updateGlobalShortData(_account, _collateralToken, _indexToken, _isLong, _sizeDelta, markPrice, true);
 
-        ITimelock(timelock).enableLeverage(_vault);
+        ITimelock(timelock).enableLeverage(_vault); // TODO
         IRouter(router).pluginIncreasePosition(_account, _collateralToken, _indexToken, _sizeDelta, _isLong);
         ITimelock(timelock).disableLeverage(_vault);
 
