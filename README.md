@@ -1,17 +1,11 @@
-# GMX Contracts
-Contracts for GMX.
+# GMX Contracts Insights
 
-Docs at https://gmxio.gitbook.io/gmx/contracts.
+Based on commit f172642d.
 
-## Install Dependencies
-If npx is not installed yet:
-`npm install -g npx`
+Resources that may help to understand:
+- https://liamhieuvu.com/how-gmx-limit-order-and-long-short-work
+- https://github.com/Dapp-Learning-DAO/Dapp-Learning/tree/main/defi/GMX
+- https://radial-calcium-3ec.notion.site/GMX-5d273a72baee419a8e7a7afe8570b48c
 
-Install packages:
-`npm i`
-
-## Compile Contracts
-`npx hardhat compile`
-
-## Run Tests
-`npx hardhat test`
+The architecture diagram from the first article is pretty clear:
+![img.png](img/gmx_structure.jpg)
