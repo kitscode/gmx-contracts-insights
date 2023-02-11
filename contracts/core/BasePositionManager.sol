@@ -19,6 +19,7 @@ import "../access/Governable.sol";
 import "../peripherals/interfaces/ITimelock.sol";
 
 import "../referrals/interfaces/IReferralStorage.sol";
+import "hardhat/console.sol";
 
 contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governable {
 
@@ -46,8 +47,8 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
 
     mapping (address => uint256) public feeReserves;
 
-    mapping (address => uint256) public override maxGlobalLongSizes;
-    mapping (address => uint256) public override maxGlobalShortSizes;
+    mapping (address => uint256) public override maxGlobalLongSizes; // 固定币种的，做多可借出上限（美金） 
+    mapping (address => uint256) public override maxGlobalShortSizes; // 固定币种的，做空可借出上限（美金）
 
     event SetDepositFee(uint256 depositFee);
     event SetIncreasePositionBufferBps(uint256 increasePositionBufferBps);
@@ -186,10 +187,13 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
 
         address timelock = IVault(_vault).gov();
 
+        // 做多时：_collateralToken = _indexToken = WBTC/WETH...
+        // 做空时：_collateralToken = stableToken
+        
         // should be called strictly before position is updated in Vault
         IShortsTracker(shortsTracker).updateGlobalShortData(_account, _collateralToken, _indexToken, _isLong, _sizeDelta, markPrice, true);
 
-        ITimelock(timelock).enableLeverage(_vault);
+        ITimelock(timelock).enableLeverage(_vault); // TODO
         IRouter(router).pluginIncreasePosition(_account, _collateralToken, _indexToken, _sizeDelta, _isLong);
         ITimelock(timelock).disableLeverage(_vault);
 
@@ -266,6 +270,7 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
 
     function _vaultSwap(address _tokenIn, address _tokenOut, uint256 _minOut, address _receiver) internal returns (uint256) {
         uint256 amountOut = IVault(vault).swap(_tokenIn, _tokenOut, _receiver);
+//        console.log("Swap # amountOut:", amountOut);
         require(amountOut >= _minOut, "BasePositionManager: insufficient amountOut");
         return amountOut;
     }
@@ -305,6 +310,9 @@ contract BasePositionManager is IBasePositionManager, ReentrancyGuard, Governabl
         if (shouldDeductFee) {
             uint256 afterFeeAmount = _amountIn.mul(BASIS_POINTS_DIVISOR.sub(depositFee)).div(BASIS_POINTS_DIVISOR);
             uint256 feeAmount = _amountIn.sub(afterFeeAmount);
+//            console.log("amountIn:", _amountIn);
+//            console.log("depositFee:", depositFee);
+//            console.log("feeAmount:", feeAmount);
             address feeToken = _path[_path.length - 1];
             feeReserves[feeToken] = feeReserves[feeToken].add(feeAmount);
             return afterFeeAmount;

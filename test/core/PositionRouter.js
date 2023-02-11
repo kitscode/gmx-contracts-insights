@@ -105,11 +105,11 @@ describe("PositionRouter", function () {
     await bnbPriceFeed.setLatestAnswer(toChainlinkPrice(300))
     await vault.setTokenConfig(...getBnbConfig(bnb, bnbPriceFeed))
 
-    await vault.setIsLeverageEnabled(false)
+    await vault.setIsLeverageEnabled(false) // TODO
     await vault.setGov(timelock.address)
 
     fastPriceEvents = await deployContract("FastPriceEvents", [])
-    fastPriceFeed = await deployContract("FastPriceFeed", [
+    fastPriceFeed = await deployContract("FastPriceFeed", [// TODO
       5 * 60, // _priceDuration
       120 * 60, // _maxPriceUpdateDelay
       2, // _minBlockInterval
@@ -231,16 +231,17 @@ describe("PositionRouter", function () {
     await router.connect(user0).approvePlugin(positionRouter.address)
 
     await dai.mint(user0.address, expandDecimals(600, 18))
-    await dai.connect(user0).approve(router.address, expandDecimals(600, 18))
+    await dai.connect(user0).approve(router.address, expandDecimals(600, 18)) // Approve Router, PositionRouter -> Router.pluginTransfer
 
-    let key = await positionRouter.getRequestKey(user0.address, 1)
+    let key = await positionRouter.getRequestKey(user0.address, 1) // increasePositionRequestKeys 订单消费队列
 
     const executionFeeReceiver = newWallet()
     await positionRouter.setPositionKeeper(positionKeeper.address, true)
 
+    // 用 Dai 做多 Bnb，10倍
     await positionRouter.connect(user0).createIncreasePosition(...params.concat([4000, referralCode, AddressZero]), { value: 4000 })
     await positionRouter.connect(positionKeeper).executeIncreasePosition(key, executionFeeReceiver.address)
-    expect(await provider.getBalance(executionFeeReceiver.address)).eq(4000)
+    expect(await provider.getBalance(executionFeeReceiver.address)).eq(4000) // executionFee
 
     params = [
       [dai.address, bnb.address], // _path
@@ -255,6 +256,7 @@ describe("PositionRouter", function () {
     await dai.mint(user0.address, expandDecimals(600, 18))
     await dai.connect(user0).approve(router.address, expandDecimals(600, 18))
 
+    // 增加保证金
     await positionRouter.connect(user0).createIncreasePosition(...params.concat([4000, referralCode, AddressZero]), { value: 4000 })
     key = await positionRouter.getRequestKey(user0.address, 2)
 
@@ -262,6 +264,8 @@ describe("PositionRouter", function () {
     await positionRouter.connect(positionKeeper).executeIncreasePosition(key, executionFeeReceiver.address)
     expect(await provider.getBalance(executionFeeReceiver.address)).eq(8000)
     expect(await positionRouter.feeReserves(dai.address)).eq(0)
+    // After Swap Fee: Bnb 2 feeBasisPoints: - 3/1000 = 1.994
+    // After Deposit Fee: 1.994 - 5/1000 = 0.00997
     expect(await positionRouter.feeReserves(bnb.address)).eq("9970000000000000") // 0.00997
 
     await expect(positionRouter.connect(user2).withdrawFees(dai.address, user3.address))
@@ -479,6 +483,8 @@ describe("PositionRouter", function () {
     await dai.connect(user0).approve(router.address, expandDecimals(600, 18))
 
     await positionRouter.connect(user0).createIncreasePosition(...params.concat([4000, referralCode, AddressZero]), { value: 4000 })
+
+    let request = await positionRouter.increasePositionRequests(key)
     await positionRouter.connect(positionKeeper).executeIncreasePosition(key, executionFeeReceiver.address)
 
     expect(await provider.getBalance(executionFeeReceiver.address)).eq(0)
@@ -498,7 +504,7 @@ describe("PositionRouter", function () {
     await increaseTime(provider, 110)
     await mineBlock(provider)
 
-    let request = await positionRouter.increasePositionRequests(key)
+    // let request = await positionRouter.increasePositionRequests(key)
 
     expect(await provider.getBalance(executionFeeReceiver.address)).eq(0)
     expect(request.account).eq(user0.address)
@@ -752,6 +758,8 @@ describe("PositionRouter", function () {
 
     await positionRouter.connect(user0).createDecreasePosition(...decreasePositionParams.concat([4000, false, AddressZero]), { value: 4000 })
     key = await positionRouter.getRequestKey(user0.address, 1)
+    console.log("---------- Decrease Position ------------");
+    
     await expect(positionRouter.connect(positionKeeper).executeDecreasePosition(key, executionFeeReceiver.address))
       .to.be.revertedWith("BasePositionManager: insufficient amountOut")
   })
