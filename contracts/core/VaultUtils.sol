@@ -91,7 +91,7 @@ contract VaultUtils is IVaultUtils, Governable {
             return (2, marginFees);
         }
 
-        return (0, marginFees);
+        return (0, marginFees); // return 0 时，满足清算条件
     }
 
     function getEntryFundingRate(address _collateralToken, address /* _indexToken */, bool /* _isLong */) public override view returns (uint256) {

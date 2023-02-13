@@ -751,7 +751,9 @@ describe("PositionManager core", function () {
     await router.addPlugin(positionManager.address)
     await router.connect(user0).approvePlugin(positionManager.address)
 
-    await positionManager.connect(user0).increasePositionETH([bnb.address], bnb.address, 0, toUsd(1000), true, toUsd(100000), { value: expandDecimals(1, 18) })
+    const amounts = await vault.poolAmounts(bnb.address);
+    console.log("poolAmounts:", amounts);
+    await positionManager.connect(user0).increasePositionETH([bnb.address], bnb.address, 0, toUsd(1000), true, toUsd(300), { value: expandDecimals(1, 18) })
     let position = await vault.getPosition(user0.address, bnb.address, bnb.address, true)
 
     await bnbPriceFeed.setLatestAnswer(toChainlinkPrice(200))

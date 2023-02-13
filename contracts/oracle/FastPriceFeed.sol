@@ -315,6 +315,7 @@ contract FastPriceFeed is ISecondaryPriceFeed, IFastPriceFeed, Governable {
     // - in case watchers flag an issue
     // - in case the cumulativeFastDelta exceeds the cumulativeRefDelta by the maxCumulativeDeltaDiff
     function getPrice(address _token, uint256 _refPrice, bool _maximise) external override view returns (uint256) {
+        // fast 1h 不更新，预言机最高最低价格，增加偏移 0.05
         if (block.timestamp > lastUpdatedAt.add(maxPriceUpdateDelay)) {
             if (_maximise) {
                 return _refPrice.mul(BASIS_POINTS_DIVISOR.add(spreadBasisPointsIfChainError)).div(BASIS_POINTS_DIVISOR);
@@ -323,6 +324,7 @@ contract FastPriceFeed is ISecondaryPriceFeed, IFastPriceFeed, Governable {
             return _refPrice.mul(BASIS_POINTS_DIVISOR.sub(spreadBasisPointsIfChainError)).div(BASIS_POINTS_DIVISOR);
         }
 
+        // fast 5m 不更新，预言机最高最低价格，增加偏移 0.002
         if (block.timestamp > lastUpdatedAt.add(priceDuration)) {
             if (_maximise) {
                 return _refPrice.mul(BASIS_POINTS_DIVISOR.add(spreadBasisPointsIfInactive)).div(BASIS_POINTS_DIVISOR);
@@ -335,12 +337,14 @@ contract FastPriceFeed is ISecondaryPriceFeed, IFastPriceFeed, Governable {
         if (fastPrice == 0) { return _refPrice; }
 
         uint256 diffBasisPoints = _refPrice > fastPrice ? _refPrice.sub(fastPrice) : fastPrice.sub(_refPrice);
-        diffBasisPoints = diffBasisPoints.mul(BASIS_POINTS_DIVISOR).div(_refPrice);
+        diffBasisPoints = diffBasisPoints.mul(BASIS_POINTS_DIVISOR).div(_refPrice); // 与预言机价格的价差比例 / 10000
 
         // create a spread between the _refPrice and the fastPrice if the maxDeviationBasisPoints is exceeded
         // or if watchers have flagged an issue with the fast price
         bool hasSpread = !favorFastPrice(_token) || diffBasisPoints > maxDeviationBasisPoints;
 
+        // 一般直接使用 fastPrice
+        // fastPrice 变动过大，或有异议时，开启差价选择
         if (hasSpread) {
             // return the higher of the two prices
             if (_maximise) {
@@ -410,8 +414,8 @@ contract FastPriceFeed is ISecondaryPriceFeed, IFastPriceFeed, Governable {
             (uint256 prevRefPrice, uint256 refTime, uint256 cumulativeRefDelta, uint256 cumulativeFastDelta) = getPriceData(_token);
 
             if (prevRefPrice > 0) {
-                uint256 refDeltaAmount = refPrice > prevRefPrice ? refPrice.sub(prevRefPrice) : prevRefPrice.sub(refPrice);
-                uint256 fastDeltaAmount = fastPrice > _price ? fastPrice.sub(_price) : _price.sub(fastPrice);
+                uint256 refDeltaAmount = refPrice > prevRefPrice ? refPrice.sub(prevRefPrice) : prevRefPrice.sub(refPrice); // 预言机价格偏移量
+                uint256 fastDeltaAmount = fastPrice > _price ? fastPrice.sub(_price) : _price.sub(fastPrice); // fast价格偏移量
 
                 // reset cumulative delta values if it is a new time window
                 if (refTime.div(priceDataInterval) != block.timestamp.div(priceDataInterval)) {
@@ -419,11 +423,13 @@ contract FastPriceFeed is ISecondaryPriceFeed, IFastPriceFeed, Governable {
                     cumulativeFastDelta = 0;
                 }
 
+                // 累计价格偏移比例 / 10^7
                 cumulativeRefDelta = cumulativeRefDelta.add(refDeltaAmount.mul(CUMULATIVE_DELTA_PRECISION).div(prevRefPrice));
                 cumulativeFastDelta = cumulativeFastDelta.add(fastDeltaAmount.mul(CUMULATIVE_DELTA_PRECISION).div(fastPrice));
             }
 
             if (cumulativeFastDelta > cumulativeRefDelta && cumulativeFastDelta.sub(cumulativeRefDelta) > maxCumulativeDeltaDiffs[_token]) {
+                // fast累计偏移量，超过预言机累计偏移量，预设的最大值
                 emit MaxCumulativeDeltaDiffExceeded(_token, refPrice, fastPrice, cumulativeRefDelta, cumulativeFastDelta);
             }
 

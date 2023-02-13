@@ -148,12 +148,15 @@ contract VaultPriceFeed is IVaultPriceFeed {
     function getPrice(address _token, bool _maximise, bool _includeAmmPrice, bool /* _useSwapPricing */) public override view returns (uint256) {
         uint256 price = useV2Pricing ? getPriceV2(_token, _maximise, _includeAmmPrice) : getPriceV1(_token, _maximise, _includeAmmPrice);
 
+        // 微调比例，线上都为0
         uint256 adjustmentBps = adjustmentBasisPoints[_token];
         if (adjustmentBps > 0) {
             bool isAdditive = isAdjustmentAdditive[_token];
             if (isAdditive) {
+                // 价格向上微调
                 price = price.mul(BASIS_POINTS_DIVISOR.add(adjustmentBps)).div(BASIS_POINTS_DIVISOR);
             } else {
+                // 价格向下微调
                 price = price.mul(BASIS_POINTS_DIVISOR.sub(adjustmentBps)).div(BASIS_POINTS_DIVISOR);
             }
         }
