@@ -66,7 +66,7 @@ contract VaultUtils is IVaultUtils, Governable {
         marginFees = marginFees.add(getPositionFee(_account, _collateralToken, _indexToken, _isLong, position.size));
 
         if (!hasProfit && position.collateral < delta) {
-            if (_raise) { revert("Vault: losses exceed collateral"); }
+            if (_raise) { revert("Vault: losses exceed collateral"); }  // 已爆仓
             return (1, marginFees);
         }
 
@@ -76,22 +76,22 @@ contract VaultUtils is IVaultUtils, Governable {
         }
 
         if (remainingCollateral < marginFees) {
-            if (_raise) { revert("Vault: fees exceed collateral"); }
+            if (_raise) { revert("Vault: fees exceed collateral"); }  // 亏损 + 累计手续费，已超过押金
             // cap the fees to the remainingCollateral
             return (1, remainingCollateral);
         }
 
         if (remainingCollateral < marginFees.add(_vault.liquidationFeeUsd())) {
-            if (_raise) { revert("Vault: liquidation fees exceed collateral"); }
+            if (_raise) { revert("Vault: liquidation fees exceed collateral"); } // 亏损 + 累计手续费 + 清算gas，已超过押金
             return (1, marginFees);
         }
 
-        if (remainingCollateral.mul(_vault.maxLeverage()) < position.size.mul(BASIS_POINTS_DIVISOR)) {
+        if (remainingCollateral.mul(_vault.maxLeverage()) < position.size.mul(BASIS_POINTS_DIVISOR)) { // 
             if (_raise) { revert("Vault: maxLeverage exceeded"); }
             return (2, marginFees);
         }
 
-        return (0, marginFees); // return 0 时，满足清算条件
+        return (0, marginFees); // 不能清算
     }
 
     function getEntryFundingRate(address _collateralToken, address /* _indexToken */, bool /* _isLong */) public override view returns (uint256) {

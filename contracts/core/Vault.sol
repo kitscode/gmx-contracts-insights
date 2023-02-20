@@ -141,7 +141,7 @@ contract Vault is ReentrancyGuard, IVault {
     mapping (bytes32 => Position) public positions;
 
     // feeReserves tracks the amount of fees per token
-    mapping (address => uint256) public override feeReserves;
+    mapping (address => uint256) public override feeReserves; // MarginFees 记录 - 数量
 
     mapping (address => uint256) public override globalShortSizes; // 池子当前提供的保证金总量 - 做空方向 - 美金
     mapping (address => uint256) public override globalShortAveragePrices;

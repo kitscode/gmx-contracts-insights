@@ -342,6 +342,7 @@ contract FastPriceFeed is ISecondaryPriceFeed, IFastPriceFeed, Governable {
         // create a spread between the _refPrice and the fastPrice if the maxDeviationBasisPoints is exceeded
         // or if watchers have flagged an issue with the fast price
         bool hasSpread = !favorFastPrice(_token) || diffBasisPoints > maxDeviationBasisPoints;
+        // 1m 中内累计偏移量超过 10%，或价差 10%
 
         // 一般直接使用 fastPrice
         // fastPrice 变动过大，或有异议时，开启差价选择
@@ -423,7 +424,7 @@ contract FastPriceFeed is ISecondaryPriceFeed, IFastPriceFeed, Governable {
                     cumulativeFastDelta = 0;
                 }
 
-                // 累计价格偏移比例 / 10^7
+                // 累计价格偏移比例 / 10^7（1分钟内）
                 cumulativeRefDelta = cumulativeRefDelta.add(refDeltaAmount.mul(CUMULATIVE_DELTA_PRECISION).div(prevRefPrice));
                 cumulativeFastDelta = cumulativeFastDelta.add(fastDeltaAmount.mul(CUMULATIVE_DELTA_PRECISION).div(fastPrice));
             }
