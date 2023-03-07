@@ -24,7 +24,7 @@ contract Vault is ReentrancyGuard, IVault {
         uint256 entryFundingRate; // 开仓时的 funding rate
         uint256 reserveAmount; // 头寸币数量
         int256 realisedPnl; // 已释放盈亏
-        uint256 lastIncreasedTime; // 上次更新时间
+        uint256 lastIncreasedTime; // 上次加仓时间
     }
 
     uint256 public constant BASIS_POINTS_DIVISOR = 10000;

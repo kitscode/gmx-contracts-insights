@@ -76,7 +76,7 @@ contract VaultUtils is IVaultUtils, Governable {
         }
 
         if (remainingCollateral < marginFees) {
-            if (_raise) { revert("Vault: fees exceed collateral"); }  // 亏损 + 累计手续费，已超过押金
+            if (_raise) { revert("Vault: fees exceed collateral"); }  // 剩余押金，已不够支付押金费率
             // cap the fees to the remainingCollateral
             return (1, remainingCollateral);
         }
@@ -86,7 +86,7 @@ contract VaultUtils is IVaultUtils, Governable {
             return (1, marginFees);
         }
 
-        if (remainingCollateral.mul(_vault.maxLeverage()) < position.size.mul(BASIS_POINTS_DIVISOR)) { // 
+        if (remainingCollateral.mul(_vault.maxLeverage()) < position.size.mul(BASIS_POINTS_DIVISOR)) { // 剩余 < 头寸/maxLeverage = 2%
             if (_raise) { revert("Vault: maxLeverage exceeded"); }
             return (2, marginFees);
         }
