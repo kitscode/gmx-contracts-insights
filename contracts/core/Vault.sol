@@ -116,10 +116,10 @@ contract Vault is ReentrancyGuard, IVault {
 
     // poolAmounts tracks the number of received tokens that can be used for leverage
     // this is tracked separately from tokenBalances to exclude funds that are deposited as margin collateral
-    mapping (address => uint256) public override poolAmounts; // 固定币种的总资金（去除手续费） - 数量
+    mapping (address => uint256) public override poolAmounts; // 固定币种的总资金（去除手续费）(数量)
 
     // reservedAmounts tracks the number of tokens reserved for open leverage positions
-    mapping (address => uint256) public override reservedAmounts; // 固定币种当前总头寸 - 数量
+    mapping (address => uint256) public override reservedAmounts; // 固定币种当前总头寸 (数量)
 
     // bufferAmounts allows specification of an amount to exclude from swaps
     // this can be used to ensure a certain amount of liquidity is available for leverage positions
@@ -130,7 +130,7 @@ contract Vault is ReentrancyGuard, IVault {
     // this is an estimated amount, it is possible for the actual guaranteed value to be lower
     // in the case of sudden price decreases, the guaranteed value should be corrected
     // after liquidations are carried out
-    mapping (address => uint256) public override guaranteedUsd; // 池子当前提供的保证金总量 - 做多方向 - 美金
+    mapping (address => uint256) public override guaranteedUsd; // 池子当前提供的保证金总量 (做多方向，不包括用户自己的保证金) (美金)
 
     // cumulativeFundingRates tracks the funding rates based on utilization
     mapping (address => uint256) public override cumulativeFundingRates;
@@ -141,9 +141,9 @@ contract Vault is ReentrancyGuard, IVault {
     mapping (bytes32 => Position) public positions;
 
     // feeReserves tracks the amount of fees per token
-    mapping (address => uint256) public override feeReserves; // MarginFees 记录 - 数量
+    mapping (address => uint256) public override feeReserves; // 固定币种当前总手续费 (数量)
 
-    mapping (address => uint256) public override globalShortSizes; // 池子当前提供的保证金总量 - 做空方向 - 美金
+    mapping (address => uint256) public override globalShortSizes; // 池子当前提供的保证金总量 (做空方向) (美金)
     mapping (address => uint256) public override globalShortAveragePrices;
     mapping (address => uint256) public override maxGlobalShortSizes;
 
@@ -548,19 +548,13 @@ contract Vault is ReentrancyGuard, IVault {
 
         uint256 amountOut = amountIn.mul(priceIn).div(priceOut);
         amountOut = adjustForDecimals(amountOut, _tokenIn, _tokenOut);
-//        console.log("amountIn:", amountIn);
-//        console.log("amountOut:", amountOut);
 
         // adjust usdgAmounts by the same usdgAmount as debt is shifted between the assets
         uint256 usdgAmount = amountIn.mul(priceIn).div(PRICE_PRECISION);
-//        console.log("usdgAmount:", usdgAmount);
         usdgAmount = adjustForDecimals(usdgAmount, _tokenIn, usdg);
-//        console.log("usdgAmount2:", usdgAmount);
 
         uint256 feeBasisPoints = vaultUtils.getSwapFeeBasisPoints(_tokenIn, _tokenOut, usdgAmount);
-//        console.log("feeBasisPoints:", feeBasisPoints);
         uint256 amountOutAfterFees = _collectSwapFees(_tokenOut, amountOut, feeBasisPoints);
-//        console.log("amountOutAfterFees:", amountOutAfterFees);
 
         _increaseUsdgAmount(_tokenIn, usdgAmount);
         _decreaseUsdgAmount(_tokenOut, usdgAmount);
@@ -665,9 +659,6 @@ contract Vault is ReentrancyGuard, IVault {
         uint256 collateral = position.collateral;
         // scrop variables to avoid stack too deep errors
         {
-//        console.log("Decrease # position.reserveAmount:", position.reserveAmount);
-//        console.log("Decrease # _sizeDelta:", _sizeDelta);
-//        console.log("Decrease # position.size:", position.size);
         // 计算减仓头寸
         uint256 reserveDelta = position.reserveAmount.mul(_sizeDelta).div(position.size); 
         position.reserveAmount = position.reserveAmount.sub(reserveDelta);
