@@ -152,7 +152,7 @@ contract GlpManager is ReentrancyGuard, Governable, IGlpManager {
             uint256 decimals = _vault.tokenDecimals(token);
 
             if (_vault.stableTokens(token)) {
-                aum = aum.add(poolAmount.mul(price).div(10 ** decimals));
+                aum = aum.add(poolAmount.mul(price).div(10 ** decimals));  // + 做空币种，空闲资金量（美金）
             } else {
                 // add global short profit / loss
                 uint256 size = _vault.globalShortSizes(token);
@@ -171,11 +171,11 @@ contract GlpManager is ReentrancyGuard, Governable, IGlpManager {
                 aum = aum.add(_vault.guaranteedUsd(token));
 
                 uint256 reservedAmount = _vault.reservedAmounts(token);
-                aum = aum.add(poolAmount.sub(reservedAmount).mul(price).div(10 ** decimals)); // + 固定币种，空闲资金量（美金）
+                aum = aum.add(poolAmount.sub(reservedAmount).mul(price).div(10 ** decimals)); // + 做多币种，空闲资金量（美金）
             }
         }
 
-        // - 做空者全部收益
+        // - 做空者总收益
         aum = shortProfits > aum ? 0 : aum.sub(shortProfits);
         return aumDeduction > aum ? 0 : aum.sub(aumDeduction);
     }

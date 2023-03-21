@@ -614,6 +614,14 @@ contract Vault is ReentrancyGuard, IVault {
         uint256 reserveDelta = usdToTokenMax(_collateralToken, _sizeDelta);
         position.reserveAmount = position.reserveAmount.add(reserveDelta);
         _increaseReservedAmount(_collateralToken, reserveDelta);
+        
+        // Available Amount
+        // stable token: poolAmount
+        // non-stable token: poolAmount - reservedAmount
+
+        // Token Balance
+        // stable token: poolAmount + feeAmount + user's total collateral
+        // non-stable token: poolAmount + feeAmount
 
         if (_isLong) { // 做多
             // guaranteedUsd stores the sum of (position.size - position.collateral) for all positions
@@ -621,7 +629,7 @@ contract Vault is ReentrancyGuard, IVault {
             // since (position.size - position.collateral) would have increased by `fee`
             _increaseGuaranteedUsd(_collateralToken, _sizeDelta.add(fee)); // 目标头寸
             _decreaseGuaranteedUsd(_collateralToken, collateralDeltaUsd); // 用户保证金
-            // treat the deposited collateral as part of the pool
+            // treat the deposited collateral as part of the pool => user collateral - fee
             _increasePoolAmount(_collateralToken, collateralDelta);
             // fees need to be deducted from the pool since fees are deducted from position.collateral
             // and collateral is treated as part of the pool
