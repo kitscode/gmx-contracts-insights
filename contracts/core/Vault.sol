@@ -101,7 +101,7 @@ contract Vault is ReentrancyGuard, IVault {
     WBTC: 15% -- 14.26%
     LINK: 5%  -- 2.49%
     UNI:  1%  -- 0.81%
-    USDC: 30% -- 35.15% 
+    USDC: 30% -- 35.15%
     USDT: 9%  -- 6.06%
     DAI:  12% -- 10.98%
     MIM:  1%  -- 0%
@@ -614,10 +614,8 @@ contract Vault is ReentrancyGuard, IVault {
         uint256 reserveDelta = usdToTokenMax(_collateralToken, _sizeDelta);
         position.reserveAmount = position.reserveAmount.add(reserveDelta);
         _increaseReservedAmount(_collateralToken, reserveDelta);
-        
-        // Available Amount
-        // stable token: poolAmount
-        // non-stable token: poolAmount - reservedAmount
+
+        // Available Amount = poolAmount - reservedAmount
 
         // Token Balance
         // stable token: poolAmount + feeAmount + user's total collateral
@@ -668,7 +666,7 @@ contract Vault is ReentrancyGuard, IVault {
         // scrop variables to avoid stack too deep errors
         {
         // 计算减仓头寸
-        uint256 reserveDelta = position.reserveAmount.mul(_sizeDelta).div(position.size); 
+        uint256 reserveDelta = position.reserveAmount.mul(_sizeDelta).div(position.size);
         position.reserveAmount = position.reserveAmount.sub(reserveDelta);
         _decreaseReservedAmount(_collateralToken, reserveDelta);
         }
@@ -906,7 +904,7 @@ contract Vault is ReentrancyGuard, IVault {
         return position.size.mul(BASIS_POINTS_DIVISOR).div(position.collateral);
     }
 
-    // for longs: nextAveragePrice = (nextPrice * nextSize)/ (nextSize + delta)
+    // for longs: nextAveragePrice = (nextPrice * nextSize)/ (nextSize + delta) => nextPrice * nextSize / nextNet
     // for shorts: nextAveragePrice = (nextPrice * nextSize) / (nextSize - delta)
     function getNextAveragePrice(address _indexToken, uint256 _size, uint256 _averagePrice, bool _isLong, uint256 _nextPrice, uint256 _sizeDelta, uint256 _lastIncreasedTime) public view returns (uint256) {
         (bool hasProfit, uint256 delta) = getDelta(_indexToken, _size, _averagePrice, _isLong, _lastIncreasedTime);
@@ -1023,7 +1021,7 @@ contract Vault is ReentrancyGuard, IVault {
         (bool _hasProfit, uint256 delta) = getDelta(_indexToken, position.size, position.averagePrice, _isLong, position.lastIncreasedTime);
         hasProfit = _hasProfit;
         // get the proportional change in pnl
-        adjustedDelta = _sizeDelta.mul(delta).div(position.size); 
+        adjustedDelta = _sizeDelta.mul(delta).div(position.size);
             // delta: 当前整个仓位的盈亏，美金
             // adjustedDelta: 当前减去的仓位部分的盈亏
         }
